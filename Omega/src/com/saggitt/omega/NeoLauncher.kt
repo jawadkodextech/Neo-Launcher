@@ -107,10 +107,14 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+
 import okhttp3.CacheControl
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+
+import org.koin.dsl.module
+import org.koin.java.KoinJavaComponent.inject
 import java.util.stream.Stream
 
 class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
@@ -572,7 +576,7 @@ class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
 
     private fun restartIfPending() {
         when {
-            sRestartFlags and FLAG_RESTART != 0 -> neoApp.restart(false)
+            sRestartFlags and FLAG_RESTART != 0  -> neoApp.restart(false)
             sRestartFlags and FLAG_RECREATE != 0 -> {
                 sRestartFlags = 0
                 recreate()
@@ -644,5 +648,8 @@ class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
     }
 }
 
-val Context.nLauncher: NeoLauncher
-    get() = NeoLauncher.getLauncher(this)
+val Context.nLauncher: NeoLauncher by inject(NeoLauncher::class.java)
+
+val neoModule = module {
+    single { NeoLauncher.getLauncher(get()) }
+}
