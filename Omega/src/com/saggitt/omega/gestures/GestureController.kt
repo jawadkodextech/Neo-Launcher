@@ -112,8 +112,13 @@ class GestureController(val launcher: NeoLauncher) : TouchController {
             val handler = gesture.handler.value
             if (handler is BlankGestureHandler) return@launch
             handler.onGestureTrigger(this@GestureController)
-            if (withHaptic) VibratorWrapper.INSTANCE.get(launcher)
-                .vibrate(VibratorWrapper.OVERVIEW_HAPTIC)
+            try {
+                if (withHaptic && VibratorWrapper.OVERVIEW_HAPTIC != null) VibratorWrapper.INSTANCE.get(
+                    launcher
+                )
+                    .vibrate(VibratorWrapper.OVERVIEW_HAPTIC)
+            } catch (e: Exception) {
+            }
         }
     }
 

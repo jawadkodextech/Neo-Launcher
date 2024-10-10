@@ -54,8 +54,6 @@ public class VibratorWrapper {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build();
 
-    public static final VibrationEffect EFFECT_CLICK =
-            createPredefined(VibrationEffect.EFFECT_CLICK);
 
     private static final float DRAG_TEXTURE_SCALE = 0.03f;
     private static final float DRAG_COMMIT_SCALE = 0.5f;
@@ -70,7 +68,7 @@ public class VibratorWrapper {
     private final VibrationEffect mBumpEffect;
 
     @Nullable
-    private final VibrationEffect mAssistEffect;
+    private VibrationEffect mAssistEffect;
 
     private long mLastDragTime;
     private final int mThresholdUntilNextDragCallMillis;
@@ -78,7 +76,21 @@ public class VibratorWrapper {
     /**
      * Haptic when entering overview.
      */
-    public static final VibrationEffect OVERVIEW_HAPTIC = EFFECT_CLICK;
+    public static final VibrationEffect OVERVIEW_HAPTIC;// = EFFECT_CLICK;
+    public static final VibrationEffect EFFECT_CLICK;// =createPredefined(VibrationEffect.EFFECT_CLICK);
+
+    static {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Only initialize if the API level is 29 (Android 10) or higher
+            EFFECT_CLICK = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            OVERVIEW_HAPTIC = EFFECT_CLICK; // Use EFFECT_CLICK for OVERVIEW_HAPTIC
+        } else {
+            // On older devices, fallback to a default vibration effect (or null)
+            EFFECT_CLICK = null; // Or create a different fallback effect
+            OVERVIEW_HAPTIC = null; // Or create a different fallback effect
+        }
+    }
+
 
     private final Vibrator mVibrator;
     private final boolean mHasVibrator;
@@ -140,7 +152,11 @@ public class VibratorWrapper {
                     .compose();
         } else {
             // fallback for devices without composition support
-            mAssistEffect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK);
+            try {
+                mAssistEffect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK);
+            } catch (NoSuchMethodError e) {
+//                mAssistEffect = null;
+            }
         }
     }
 
@@ -207,7 +223,9 @@ public class VibratorWrapper {
         return Settings.System.getInt(resolver, HAPTIC_FEEDBACK_ENABLED, 0) == 1;
     }
 
-    /** Vibrates with the given effect if haptic feedback is available and enabled. */
+    /**
+     * Vibrates with the given effect if haptic feedback is available and enabled.
+     */
     public void vibrate(VibrationEffect vibrationEffect) {
         if (mHasVibrator && mIsHapticFeedbackEnabled) {
             UI_HELPER_EXECUTOR.execute(() -> mVibrator.vibrate(vibrationEffect, VIBRATION_ATTRS));

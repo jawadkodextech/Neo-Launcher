@@ -12,9 +12,9 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<com.android.launcher3.LauncherRootView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.android.launcher3.LauncherRootView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:launcher="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/launcher"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -36,13 +36,13 @@
         <com.android.launcher3.views.AccessibilityActionsView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:contentDescription="@string/home_screen"
-            />
+            android:contentDescription="@string/home_screen" />
 
         <View
             android:id="@+id/dummy_view"
             android:layout_width="0dp"
             android:layout_height="0dp" />
+
 
         <!-- The workspace contains 5 screens of cells -->
         <!-- DO NOT CHANGE THE ID -->
@@ -51,9 +51,117 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
+            android:layout_marginTop="@dimen/padded_rounded_button_height"
             android:theme="@style/HomeScreenElementTheme"
             launcher:pageIndicator="@+id/page_indicator" />
 
+        <RelativeLayout
+            android:id="@+id/rlYahooSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginHorizontal="30dp"
+            android:layout_marginTop="@dimen/padded_rounded_button_height"
+            android:background="@drawable/bg_new_yahoo"
+            android:theme="@style/HomeScreenElementTheme">
+            <!--android:drawableEnd="@drawable/ic_mic"-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.saggitt.omega.searchsuggestion.SearchView
+                    android:id="@+id/search"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:completionThreshold="1"
+                    android:dropDownWidth="match_parent"
+                    android:gravity="start|center_vertical"
+                    android:hint="@string/search_hint"
+                    android:imeOptions="actionGo"
+                    android:importantForAutofill="no"
+                    android:inputType="textUri"
+                    android:maxLines="1"
+                    android:minHeight="@dimen/padded_rounded_button_height"
+                    android:selectAllOnFocus="true"
+                    android:textColor="@android:color/white"
+                    android:textColorHint="@android:color/white"
+                    android:textCursorDrawable="@drawable/custom_cursor"
+                    android:visibility="gone" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/etYahooSearch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@+id/llExtras"
+                        android:background="@null"
+                        android:drawableStart="@drawable/ic_yahoo"
+                        android:drawablePadding="10dp"
+                        android:gravity="center_vertical"
+                        android:hint="@string/search_with_yahoo"
+                        android:imeActionLabel="@string/web_search_yahoo"
+                        android:imeOptions="actionSearch"
+                        android:importantForAutofill="no"
+                        android:inputType="text|textAutoComplete|textAutoCorrect|textEnableTextConversionSuggestions"
+                        android:maxLines="1"
+                        android:minHeight="40dp"
+                        android:paddingHorizontal="20dp"
+                        android:paddingVertical="10dp"
+                        android:textColor="@android:color/white"
+                        android:textCursorDrawable="@drawable/custom_cursor"
+                        android:textSize="16sp"
+                        android:theme="@style/HomeScreenElementTheme"
+                        tools:ignore="LabelFor" />
+
+                    <LinearLayout
+                        android:id="@+id/llExtras"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/btnCrossField"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:importantForAccessibility="no"
+                            android:padding="10dp"
+                            android:src="@drawable/close_icon"
+                            android:tint="@android:color/white" />
+
+                        <Button
+                            android:id="@+id/btnSearch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:background="@null"
+                            android:importantForAccessibility="no"
+                            android:text="@string/label_search"
+                            android:textColor="@android:color/white" />
+
+                        <!--                android:src="@drawable/close_icon"-->
+                        <!--
+                                            android:tint="@android:color/white"-->
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rlSuggestion"
+                    android:elevation="5dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+
+        </RelativeLayout>
         <!-- DO NOT CHANGE THE ID -->
         <include
             android:id="@+id/hotseat"
@@ -62,6 +170,9 @@
         <include
             android:id="@+id/options_view"
             layout="@layout/longpress_options_menu" />
+
+        <!--        @dimen/popup_single_item_radius-->
+
 
         <!-- Keep these behind the workspace so that they are not visible when
          we go into AllApps -->
@@ -72,14 +183,15 @@
             android:layout_gravity="bottom|center_horizontal"
             android:theme="@style/HomeScreenElementTheme" />
 
+
         <include
             android:id="@+id/drop_target_bar"
             layout="@layout/drop_target_bar" />
 
         <com.android.launcher3.views.ScrimView
+            android:id="@+id/scrim_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/scrim_view"
             android:background="@android:color/transparent" />
 
         <include

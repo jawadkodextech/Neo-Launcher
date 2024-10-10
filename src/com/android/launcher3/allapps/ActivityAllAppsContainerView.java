@@ -132,7 +132,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     private static final long DEFAULT_SEARCH_TRANSITION_DURATION_MS = 300;
     // Render the header protection at all times to debug clipping issues.
     private static final boolean DEBUG_HEADER_PROTECTION = false;
-    /** Context of an activity or window that is inflating this container. */
+    /**
+     * Context of an activity or window that is inflating this container.
+     */
 
     protected final T mActivityContext;
     protected final List<ActivityAllAppsContainerView<?>.AdapterHolder> mAH;
@@ -173,7 +175,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     protected boolean mUsingTabs;
     protected RecyclerViewFastScroller mTouchHandler;
 
-    /** {@code true} when rendered view is in search state instead of the scroll state. */
+    /**
+     * {@code true} when rendered view is in search state instead of the scroll state.
+     */
     private boolean mIsSearching;
     private boolean mRebindAdaptersAfterSearchAnimation;
     private int mNavBarScrimHeight = 0;
@@ -188,9 +192,11 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     private float mBottomSheetAlpha = 1f;
     private boolean mForceBottomSheetVisible;
     private int mTabsProtectionAlpha;
-    @Nullable private AllAppsTransitionController mAllAppsTransitionController;
+    @Nullable
+    private AllAppsTransitionController mAllAppsTransitionController;
     private final AllAppsTabsController mTabsController;
     private final NeoPrefs prefs;
+
     public ActivityAllAppsContainerView(Context context) {
         this(context, null);
     }
@@ -235,7 +241,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         mSearchTransitionController = new SearchTransitionController(this);
     }
 
-    /** Creates the delegate for initializing search. */
+    /**
+     * Creates the delegate for initializing search.
+     */
     protected AllAppsSearchUiDelegate createSearchUiDelegate() {
         return new AllAppsSearchUiDelegate(this);
     }
@@ -248,9 +256,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
      * Initializes the view hierarchy and internal variables. Any initialization which actually uses
      * these members should be done in {@link #onFinishInflate()}.
      * In terms of subclass initialization, the following would be parallel order for activity:
-     *   initContent -> onPreCreate
-     *   constructor/init -> onCreate
-     *   onFinishInflate -> onPostCreate
+     * initContent -> onPreCreate
+     * constructor/init -> onCreate
+     * onFinishInflate -> onPostCreate
      */
     protected void initContent() {
         mMainAdapterProvider = mSearchUiDelegate.createMainAdapterProvider();
@@ -339,7 +347,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return mSearchContainer;
     }
 
-    /** Invoke when the current search session is finished. */
+    /**
+     * Invoke when the current search session is finished.
+     */
     public void onClearSearchResult() {
         getMainAdapterProvider().clearHighlightedItem();
         animateToSearchState(false);
@@ -461,7 +471,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     /**
      * Resets the UI to be ready for fresh interactions in the future.
      *
-     * @param animate Whether to animate the header during the reset (e.g. switching profile tabs).
+     * @param animate    Whether to animate the header during the reset (e.g. switching profile tabs).
      * @param exitSearch Whether to force exit the search state and return to A-Z apps list.
      */
     public void reset(boolean animate, boolean exitSearch) {
@@ -657,7 +667,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
                     (LayoutParams) mFastScroller.getLayoutParams();
             scrollerLayoutParams.bottomMargin = mSearchContainer.getHeight()
                     + getResources().getDimensionPixelSize(
-                            R.dimen.fastscroll_bottom_margin_floating_search);
+                    R.dimen.fastscroll_bottom_margin_floating_search);
         }
 
         // Re-register icon containers
@@ -675,7 +685,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     /**
      * If {@link } is enabled, wire custom
      * {@link RecyclerView.RecycledViewPool} to main and work {@link AllAppsRecyclerView}.
-     *
+     * <p>
      * Then if {@link } is enabled, update max pool size. This is because
      * all apps rv's hidden visibility is changed to {@link View#GONE} from {@link View#INVISIBLE),
      * thus we cannot rely on layout pass to update pool size.
@@ -964,7 +974,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return mSearchUiDelegate.inflateSearchBar();
     }
 
-    /** The adapter provider for the main section. */
+    /**
+     * The adapter provider for the main section.
+     */
     public final SearchAdapterProvider<?> getMainAdapterProvider() {
         return mMainAdapterProvider;
     }
@@ -1134,7 +1146,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return false;
     }
 
-    /** The current active recycler view (A-Z list from one of the profiles, or search results). */
+    /**
+     * The current active recycler view (A-Z list from one of the profiles, or search results).
+     */
     public AllAppsRecyclerView getActiveRecyclerView() {
         if (isSearching()) {
             return getSearchRecyclerView();
@@ -1142,7 +1156,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return getActiveAppsRecyclerView();
     }
 
-    /** The current apps recycler view in the container. */
+    /**
+     * The current apps recycler view in the container.
+     */
     private AllAppsRecyclerView getActiveAppsRecyclerView() {
         if (!mUsingTabs || isPersonalTab()) {
             return mAH.get(AdapterHolder.MAIN).mRecyclerView;
@@ -1159,7 +1175,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return mViewPager != null ? mViewPager : findViewById(R.id.apps_list_view);
     }
 
-    /** The RV for search results, which is hidden while A-Z apps are visible. */
+    /**
+     * The RV for search results, which is hidden while A-Z apps are visible.
+     */
     public SearchRecyclerView getSearchRecyclerView() {
         return mSearchRecyclerView;
     }
@@ -1183,7 +1201,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     }
 
     @Override
-    public void onDropCompleted(View target, DragObject d, boolean success) {}
+    public void onDropCompleted(View target, DragObject d, boolean success) {
+    }
 
     @Override
     public void setInsets(Rect insets) {
@@ -1294,7 +1313,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return view.getGlobalVisibleRect(new Rect());
     }
 
-    /** Called in Launcher#bindStringCache() to update the UI when cache is updated. */
+    /**
+     * Called in Launcher#bindStringCache() to update the UI when cache is updated.
+     */
     public void updateWorkUI() {
         setDeviceManagementResources();
         if (mWorkManager.getWorkModeSwitch() != null) {
@@ -1307,7 +1328,7 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         AllAppsRecyclerView workRV = mAH.get(getWorkHolderIndex()).mRecyclerView;
         if (workRV != null) {
             for (int i = 0; i < workRV.getChildCount(); i++) {
-                View currentView  = workRV.getChildAt(i);
+                View currentView = workRV.getChildAt(i);
                 int currentItemViewType = workRV.getChildViewHolder(currentView).getItemViewType();
                 if (currentItemViewType == VIEW_TYPE_WORK_EDU_CARD) {
                     ((WorkEduCard) currentView).updateStringFromCache();
@@ -1341,7 +1362,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         return isSearching() ? getSearchRecyclerView() : getAppsRecyclerViewContainer();
     }
 
-    /** The current page visible in all apps. */
+    /**
+     * The current page visible in all apps.
+     */
     public int getCurrentPage() {
         return isSearching()
                 ? SEARCH
@@ -1370,8 +1393,8 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
      * Adds an update listener to animator that adds springs to the animation.
      */
     public void addSpringFromFlingUpdateListener(ValueAnimator animator,
-            float velocity /* release velocity */,
-            float progress /* portion of the distance to travel*/) {
+                                                 float velocity /* release velocity */,
+                                                 float progress /* portion of the distance to travel*/) {
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -1385,7 +1408,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         });
     }
 
-    /** Invoked when the container is pulled. */
+    /**
+     * Invoked when the container is pulled.
+     */
     public void onPull(float deltaDistance, float displacement) {
         absorbPullDeltaDistance(PULL_MULTIPLIER * deltaDistance, PULL_MULTIPLIER * displacement);
         // Current motion spec is to actually push and not pull
@@ -1511,7 +1536,9 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
     }
 
-    /** Returns the position of the bottom edge of the header */
+    /**
+     * Returns the position of the bottom edge of the header
+     */
     public int getHeaderBottom() {
         int bottom = (int) getTranslationY() + mHeader.getClipTop();
         if (isSearchBarFloating()) {
@@ -1551,12 +1578,16 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         }
     }
 
-    /** Returns the instance of @{code SearchTransitionController}. */
+    /**
+     * Returns the instance of @{code SearchTransitionController}.
+     */
     public SearchTransitionController getSearchTransitionController() {
         return mSearchTransitionController;
     }
 
-    /** Holds a {@link BaseAllAppsAdapter} and related fields. */
+    /**
+     * Holds a {@link BaseAllAppsAdapter} and related fields.
+     */
     public class AdapterHolder {
         public static final int MAIN = 0;
         public static final int WORK = 1;

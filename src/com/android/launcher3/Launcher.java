@@ -1746,6 +1746,14 @@ public class Launcher extends StatefulActivity<LauncherState>
         getStateManager().goToState(ALL_APPS, alreadyOnHome);
     }
 
+    protected void showAllAppsFromIntentAndStartSearch(boolean alreadyOnHome) {
+        AbstractFloatingView.closeAllOpenViews(this);
+        getStateManager().goToState(ALL_APPS, alreadyOnHome);
+
+//        mHandler.postDelayed(() -> startSearch("",false,null,true),800);
+        mHandler.postDelayed(() -> getAppsView().animateToSearchState(true,300),800);
+    }
+
     private void showAllAppsWorkTabFromIntent(boolean alreadyOnHome) {
         showAllAppsFromIntent(alreadyOnHome);
         mAppsView.switchToTab(ActivityAllAppsContainerView.AdapterHolder.WORK);
@@ -1886,7 +1894,7 @@ public class Launcher extends StatefulActivity<LauncherState>
         if (mLauncherCallbacks == null ||
                 !mLauncherCallbacks.startSearch(initialQuery, selectInitialQuery, appSearchData)) {
             // Starting search from the callbacks failed. Start the default global search.
-            super.startSearch(initialQuery, selectInitialQuery, appSearchData, true);
+            super.startSearch(initialQuery, selectInitialQuery, appSearchData, globalSearch);
         }
 
         // We need to show the workspace after starting the search

@@ -29,6 +29,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 
 /**
  * A drawable for a very specific purpose. Used for the caret arrow on a rounded rectangle popup
@@ -111,7 +112,13 @@ public class RoundedArrowDrawable extends Drawable {
 
     @Override
     public void getOutline(Outline outline) {
-        outline.setPath(mPath);
+        try{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                outline.setPath(mPath);
+            }
+        } catch (Exception e) {
+
+        }
     }
 
     @Override

@@ -36,12 +36,12 @@ android {
     namespace = "com.android.launcher3"
     compileSdk = 34
 
-    val name = "1.0.0-alpha02"
+    val name = "1.0.0-testing1"
     val code = 1003
 
     defaultConfig {
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 34
         applicationId = "com.saggitt.omega"
 
         versionName = name
@@ -301,6 +301,9 @@ dependencies {
     androidTestImplementation(libs.support.runner)
     androidTestImplementation(libs.support.rules)
     androidTestImplementation(libs.support.uiautomator)
+    implementation(libs.rxjava)
+    implementation(libs.rxandroid)
+    implementation(libs.rxkotlin)
 }
 
 // using a task as a preBuild dependency instead of a function that takes some time insures that it runs

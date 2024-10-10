@@ -1079,9 +1079,11 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
      */
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (isTrackpadMultiFingerSwipe(ev)) {
-            return false;
-        }
+        try{
+            if (isTrackpadMultiFingerSwipe(ev)) {
+                return false;
+            }
+        }catch (NoSuchMethodError e){}
         return super.onInterceptTouchEvent(ev);
     }
 
@@ -1091,9 +1093,11 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if (isTrackpadMultiFingerSwipe(ev)) {
-            return false;
-        }
+        try{
+            if (isTrackpadMultiFingerSwipe(ev)) {
+                return false;
+            }
+        }catch (NoSuchMethodError e){}
         return super.onTouchEvent(ev);
     }
 

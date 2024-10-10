@@ -833,16 +833,16 @@ class NeoPrefs private constructor(val context: Context) {
         }
     )
 
-    var categoriesLayout = StringMultiSelectionPref(
-        dataStore = dataStore,
-        key = PrefKey.DRAWER_LAYOUT_CATEGORIES,
-        titleId = R.string.title_drawer_layout_categories,
-        defaultValue = setOf(),
-        entries = Config.layoutCategories(context),
-        onChange = {
-            Log.d("NeoPref", "Categories layout changed to $it")
-        }
-    )
+//    var categoriesLayout = StringMultiSelectionPref(
+//        dataStore = dataStore,
+//        key = PrefKey.DRAWER_LAYOUT_CATEGORIES,
+//        titleId = R.string.title_drawer_layout_categories,
+//        defaultValue = setOf(),
+//        entries = Config.layoutCategories(context),
+//        onChange = {
+//            Log.d("NeoPref", "Categories layout changed to $it")
+//        }
+//    )
 
     // Notifications & Widgets/Smartspace
     val notificationDots = IntentLauncherPref(

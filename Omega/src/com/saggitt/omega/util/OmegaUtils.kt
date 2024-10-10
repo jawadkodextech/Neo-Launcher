@@ -276,7 +276,7 @@ fun overrideAllAppsTextColor(textView: TextView) {
         textView.setTextColor(Themes.getAttrColor(context, R.attr.allAppsAlternateTextColor))
     }
 }
-
+//https://search.yahoo.com/search?q=hho
 fun openURLInBrowser(context: Context, url: String?) {
     openURLInBrowser(context, url, null, null)
 }

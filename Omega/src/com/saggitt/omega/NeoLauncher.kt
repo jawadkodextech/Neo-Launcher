@@ -18,6 +18,7 @@
 
 package com.saggitt.omega
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.ContextWrapper
@@ -32,10 +33,19 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PersistableBundle
 import android.util.AttributeSet
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.AdapterView
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.activity.result.IntentSenderRequest
@@ -45,15 +55,21 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityOptionsCompat
+import androidx.core.content.getSystemService
+import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import com.android.launcher3.AppFilter
 import com.android.launcher3.Launcher
 import com.android.launcher3.LauncherAppState
+import com.android.launcher3.LauncherRootView
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
 import com.android.launcher3.model.data.AppInfo
@@ -70,14 +86,31 @@ import com.saggitt.omega.gestures.VerticalSwipeGestureController
 import com.saggitt.omega.popup.OmegaShortcuts
 import com.saggitt.omega.preferences.NeoPrefs
 import com.saggitt.omega.preferences.PreferencesChangeCallback
+import com.saggitt.omega.searchsuggestion.AndroidLogger
+import com.saggitt.omega.searchsuggestion.RVSuggestionAdapter
+import com.saggitt.omega.searchsuggestion.RequestFactory
+import com.saggitt.omega.searchsuggestion.SearchEngineProvider
+import com.saggitt.omega.searchsuggestion.SearchListener
+import com.saggitt.omega.searchsuggestion.SearchView
+import com.saggitt.omega.searchsuggestion.StyleRemovingTextWatcher
+import com.saggitt.omega.searchsuggestion.SuggestionsAdapter
+import com.saggitt.omega.searchsuggestion.WebPage
 import com.saggitt.omega.theme.ThemeManager
 import com.saggitt.omega.theme.ThemeOverride
 import com.saggitt.omega.util.Config
 import com.saggitt.omega.util.hasStoragePermission
 import com.saggitt.omega.views.OmegaBackgroundView
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.CacheControl
+import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.util.stream.Stream
 
 class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
@@ -92,9 +125,23 @@ class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
     val gestureController by lazy { GestureController(this) }
     val background by lazy { findViewById<OmegaBackgroundView>(R.id.omega_background)!! }
     val dummyView by lazy { findViewById<View>(R.id.dummy_view)!! }
+    private val rlYahooSearch by lazy { findViewById<RelativeLayout>(R.id.rlYahooSearch)!! }
+    private val etYahooSearch by lazy { findViewById<EditText>(R.id.etYahooSearch)!! }
+    private val launcherRoot by lazy { findViewById<LauncherRootView>(R.id.launcher)!! }
+    private val btnCrossField by lazy { findViewById<ImageView>(R.id.btnCrossField)!! }
+    private val btnSearch by lazy { findViewById<Button>(R.id.btnSearch)!! }
+    private val rlSuggestion by lazy { findViewById<RecyclerView>(R.id.rlSuggestion)!! }
+    private val search by lazy { findViewById<SearchView>(R.id.search)!! }
+    private val llExtras by lazy { findViewById<LinearLayout>(R.id.llExtras)!! }
+    private var mList: ArrayList<WebPage> = arrayListOf()
+    private val txtSearch: String
+        get() {
+            return etYahooSearch.text?.toString()?.trim() ?: ""
+        }
     val optionsView by lazy { findViewById<OptionsPopupView<Launcher>>(R.id.options_view)!! }
     private val prefCallback = PreferencesChangeCallback(this)
 
+    //    showAllAppsFromIntent
     private val hiddenApps = ArrayList<AppInfo>()
     val allApps = ArrayList<AppInfo>()
     private var paused = false
@@ -103,7 +150,8 @@ class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateRegistryController.savedStateRegistry
-
+    private var mDisposable: Disposable? = null
+    private var mRVSuggestionAdapter: RVSuggestionAdapter? = null
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
 
@@ -148,13 +196,143 @@ class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
                 packageName
             ), true
         )
+        etYahooSearch.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_SEARCH) {
+                // Handle action when "Done" is pressed
+                // Your code here
+                if (txtSearch.isNotEmpty()) {
+                    com.saggitt.omega.util.openURLInBrowser(
+                        this,
+                        "https://search.yahoo.com/search?q=$txtSearch",
+                        rlYahooSearch.clipBounds,
+                        null
+                    )
+                    etYahooSearch.clearFocus()
+                    etYahooSearch.setText("")
+                }
+                true // Return true if you handled the action
+            } else {
+                false // Return false if you didn't handle the action
+            }
+        }
+
+        btnCrossField.setOnClickListener {
+            etYahooSearch.setText("")
+            hideKeyboard()
+        }
+        btnSearch.setOnClickListener {
+            hideKeyboard()
+            com.saggitt.omega.util.openURLInBrowser(
+                this,
+                "https://search.yahoo.com/search?q=$txtSearch",
+                rlYahooSearch.clipBounds,
+                null
+            )
+            etYahooSearch.setText("")
+            etYahooSearch.clearFocus()
+            rlSuggestion.isVisible = false
+        }
+
+        // Assuming you're in an Activity or Fragment
+        val context: Context = this // Use the current context
+        val databaseScheduler = Schedulers.io() // Example for database operations
+        val networkScheduler = Schedulers.io() // Example for network operations
+        val mainScheduler = AndroidSchedulers.mainThread() // For main thread operations
+
+// Create instances for the parameters of SearchEngineProvider
+        val okHttpClient: Single<OkHttpClient> =
+            Single.just(OkHttpClient()) // Replace with your OkHttpClient initialization
+        val requestFactory = object : RequestFactory {
+            override fun createSuggestionsRequest(httpUrl: HttpUrl, encoding: String): Request {
+                return Request.Builder().url(httpUrl)
+                    .addHeader("Accept-Charset", encoding)
+                    .addHeader("Accept", "application/json")
+                    .addHeader("Content-Type", "application/json")
+                    .cacheControl(CacheControl.Builder().build())
+                    .build()
+            }
+        }//RequestFactory() // Create an instance of RequestFactory
+//        val application = context.applicationContext as Application // Get Application context
+        val logger = AndroidLogger() // Create an instance of Logger
+        val searchEngineProvider = SearchEngineProvider(
+            okHttpClient,
+            requestFactory,
+            application,
+            logger
+        )
+        val suggestionsAdapter = SuggestionsAdapter(
+            context,
+            databaseScheduler,
+            networkScheduler,
+            mainScheduler,
+            searchEngineProvider
+        )
+        mRVSuggestionAdapter = RVSuggestionAdapter(mList, this)
+        mRVSuggestionAdapter?.onSuggestionInsertClick = { itemWebPage ->
+            Log.d(TAG,"$TAG ${itemWebPage.toString()}")
+            etYahooSearch.setText(itemWebPage.title)
+            etYahooSearch.selectAll()
+            com.saggitt.omega.util.openURLInBrowser(
+                this,
+                "https://search.yahoo.com/search?q=${itemWebPage.url}",
+                rlYahooSearch.clipBounds,
+                null
+            )
+            etYahooSearch.clearFocus()
+            hideKeyboard()
+            rlSuggestion.isVisible = false
+        }
+        rlSuggestion.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        rlSuggestion.adapter = mRVSuggestionAdapter
+        search.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+            search.clearFocus()
+            val item = suggestionsAdapter.getItem(position) as WebPage
+            com.saggitt.omega.util.openURLInBrowser(
+                this,
+                item.url,
+                rlYahooSearch.clipBounds,
+                null
+            )
+            hideKeyboard()
+        }
+        val inputMethodManager = application.getSystemService<InputMethodManager>()!!
+        //presenter.onSearch(search.text.toString())
+        search.setAdapter(suggestionsAdapter)
+        val searchListener = SearchListener(
+            onConfirm = { },
+            inputMethodManager = inputMethodManager
+        )
+        search.setOnEditorActionListener(searchListener)
+        search.setOnKeyListener(searchListener)
+        search.addTextChangedListener(StyleRemovingTextWatcher())
+        search.setOnFocusChangeListener { _, hasFocus ->
+//            presenter.onSearchFocusChanged(hasFocus)
+            search.selectAll()
+        }
+        etYahooSearch.addTextChangedListener {
+            llExtras.isVisible = txtSearch.isNotEmpty()
+            rlSuggestion.isVisible = txtSearch.isNotEmpty()
+            if (llExtras.isVisible) {
+//                suggestionsAdapter.cancelAllRequests()
+//                mDisposable?.dispose()
+                mDisposable = suggestionsAdapter.getSearchResults(txtSearch) {
+                    mList.clear()
+                    mList.addAll(it.take(5))
+                    mRVSuggestionAdapter?.notifyDataSetChanged()
+                }
+            } else {
+//                suggestionsAdapter.cancelAllRequests()
+                mDisposable?.dispose()
+            }
+        }
+
     }
 
     override fun onCreateView(
         parent: View?,
         name: String,
         context: Context,
-        attrs: AttributeSet
+        attrs: AttributeSet,
     ): View? {
         if (prefs.dockDotsPageIndicator.getValue() && WorkspacePageIndicator::class.java.name == name) {
             return LayoutInflater.from(context).inflate(
@@ -301,16 +479,34 @@ class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
         }
     }
 
+//    private val resultLauncher =
+//        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+//            if (result.resultCode == Activity.RESULT_OK) {
+//                resetLauncherViaFakeActivity()
+//            }
+//        }
 
     override fun onStart() {
         super.onStart()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        showSertDefaultlauncher()
+    }
+
+    private fun showSertDefaultlauncher() {
+        if (isDefaultLauncher() || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            resetLauncherViaFakeActivity()
+        } else {
+//            showLauncherSelector(resultLauncher)
+            showLauncherSelector()
+        }
     }
 
     override fun onResume() {
         super.onResume()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         restartIfPending()
+        llExtras.isVisible = txtSearch.isNotEmpty()
+        rlSuggestion.isVisible = false
         dragLayer.viewTreeObserver.addOnDrawListener(object : ViewTreeObserver.OnDrawListener {
             private var handled = false
 
@@ -351,10 +547,14 @@ class NeoLauncher : Launcher(), LifecycleOwner, SavedStateRegistryOwner,
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (activityResultRegistry.dispatchResult(requestCode, resultCode, data)) {
-            mPendingActivityRequestCode = -1
+        if (requestCode == 2211221 && resultCode == Activity.RESULT_OK) {
+            resetLauncherViaFakeActivity()
         } else {
-            super.onActivityResult(requestCode, resultCode, data)
+            if (activityResultRegistry.dispatchResult(requestCode, resultCode, data)) {
+                mPendingActivityRequestCode = -1
+            } else {
+                super.onActivityResult(requestCode, resultCode, data)
+            }
         }
     }
 

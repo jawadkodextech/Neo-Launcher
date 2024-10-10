@@ -36,6 +36,10 @@ import android.animation.Animator;
 import android.animation.Animator.AnimatorListener;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Context;
+import android.os.Build;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.FloatProperty;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
@@ -208,6 +212,23 @@ public class AllAppsTransitionController
         mVibratorWrapper = VibratorWrapper.INSTANCE.get(mLauncher.getApplicationContext());
     }
 
+    public static void triggerVibration(Context context) {
+        Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10 (API 29) and above: Use createPredefined
+            VibrationEffect vibrationEffect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK);
+            vibrator.vibrate(vibrationEffect);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Android 8.0 (API 26) to Android 9.0: Use createOneShot or createWaveform
+            VibrationEffect vibrationEffect = VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE);
+            vibrator.vibrate(vibrationEffect);
+        } else {
+            // Below Android 8.0: Use the deprecated vibrate(long) method
+            vibrator.vibrate(100);
+        }
+    }
+
     public float getShiftRange() {
         return mShiftRange;
     }
@@ -319,7 +340,9 @@ public class AllAppsTransitionController
         }
     }
 
-    /** Animate all apps view to 1f scale. */
+    /**
+     * Animate all apps view to 1f scale.
+     */
     public void animateAllAppsToNoScale() {
         mAllAppScale.animateToValue(1f)
                 .setDuration(REVERT_SWIPE_ALL_APPS_TO_HOME_ANIMATION_DURATION_MS)
@@ -329,7 +352,7 @@ public class AllAppsTransitionController
     /**
      * Creates an animation which updates the vertical transition progress and updates all the
      * dependent UI using various animation events
-     *
+     * <p>
      * This method also dictates where along the progress the haptics should be played. As the user
      * scrolls up from workspace or down from AllApps, a drag haptic is being played until the
      * commit point where it plays a commit haptic. Where we play the haptics differs when going
@@ -337,7 +360,7 @@ public class AllAppsTransitionController
      */
     @Override
     public void setStateWithAnimation(LauncherState toState,
-            StateAnimationConfig config, PendingAnimation builder) {
+                                      StateAnimationConfig config, PendingAnimation builder) {
         if (mLauncher.isInState(ALL_APPS) && !ALL_APPS.equals(toState)) {
             // For atomic animations, we close the keyboard immediately.
             if (!config.userControlled && mShouldControlKeyboard) {
@@ -362,7 +385,7 @@ public class AllAppsTransitionController
             });
         }
 
-        if(FeatureFlags.ENABLE_PREMIUM_HAPTICS_ALL_APPS.get() && config.userControlled
+        if (FeatureFlags.ENABLE_PREMIUM_HAPTICS_ALL_APPS.get() && config.userControlled
                 && Utilities.ATLEAST_S) {
             if (toState == ALL_APPS) {
                 builder.addOnFrameListener(
@@ -452,12 +475,12 @@ public class AllAppsTransitionController
      * (direct or indirect) inclusive. This method will also save the old clipChildren value on each
      * view with {@link View#setTag(int, Object)}, which can be restored in
      * {@link #restoreClipChildrenOnViewTree(View, ViewParent)}.
-     *
+     * <p>
      * Note that if parent is null or not a parent of the view, this method will be applied all the
      * way to root view.
      *
-     * @param v child view
-     * @param parent direct or indirect parent of child view
+     * @param v            child view
+     * @param parent       direct or indirect parent of child view
      * @param clipChildren whether we should clip children
      */
     private static void setClipChildrenOnViewTree(
@@ -490,11 +513,11 @@ public class AllAppsTransitionController
      * Recursively call {@link ViewGroup#setClipChildren(boolean)} to restore clip children value
      * set in {@link #setClipChildrenOnViewTree(View, ViewParent, boolean)} on view to its parent
      * (direct or indirect) inclusive.
-     *
+     * <p>
      * Note that if parent is null or not a parent of the view, this method will be applied all the
      * way to root view.
      *
-     * @param v child view
+     * @param v      child view
      * @param parent direct or indirect parent of child view
      */
     private static void restoreClipChildrenOnViewTree(

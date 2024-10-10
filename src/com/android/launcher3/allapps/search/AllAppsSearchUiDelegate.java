@@ -77,6 +77,7 @@ public class AllAppsSearchUiDelegate {
     /** Whether the search box is floating above the apps surface (inset by the IME). */
     public boolean isSearchBarFloating() {
         return false;
+//        return true;
     }
 
     /** Creates the adapter provider for the main section. */

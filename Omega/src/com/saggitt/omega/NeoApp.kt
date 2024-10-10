@@ -19,13 +19,19 @@ package com.saggitt.omega
 
 import android.app.Activity
 import android.app.Application
+import android.app.SearchManager
+import android.app.role.RoleManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.annotation.RequiresApi
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.Utilities
 import com.saggitt.omega.blur.BlurWallpaperProvider
@@ -187,3 +193,70 @@ class NeoApp : Application() {
 }
 
 val Context.neoApp get() = applicationContext as NeoApp
+
+
+fun Context.isDefaultLauncher(): Boolean {
+    val launcherPackageName = getDefaultLauncherPackage(this)
+    return this.packageName == launcherPackageName
+}
+
+fun getDefaultLauncherPackage(context: Context): String {
+    val intent = Intent()
+    intent.action = Intent.ACTION_MAIN
+    intent.addCategory(Intent.CATEGORY_HOME)
+    val packageManager = context.packageManager
+    val result = packageManager.resolveActivity(intent, 0)
+    return if (result?.activityInfo != null) {
+        result.activityInfo.packageName
+    } else "android"
+}
+
+fun Context.resetDefaultLauncher() {
+    try {
+        val componentName = ComponentName(this, FakeHomeActivity::class.java)
+        packageManager.setComponentEnabledSetting(
+            componentName,
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP
+        )
+        val selector = Intent(Intent.ACTION_MAIN)
+        selector.addCategory(Intent.CATEGORY_HOME)
+//        startActivity(selector)
+        packageManager.setComponentEnabledSetting(
+            componentName,
+            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+            PackageManager.DONT_KILL_APP
+        )
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+fun Context.resetLauncherViaFakeActivity() {
+    resetDefaultLauncher()
+//    if (getDefaultLauncherPackage(this).contains("."))
+//        startActivity(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+}
+
+
+
+@RequiresApi(Build.VERSION_CODES.Q)
+fun Activity.showLauncherSelector(
+    resultLauncher: ActivityResultLauncher<Intent>? = null
+) {
+    val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+    if (roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
+        val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
+        if(resultLauncher != null) {
+            resultLauncher?.launch(intent)
+        }else{
+            startActivityForResult(intent,2211221)
+        }
+    } else
+        resetDefaultLauncher()
+}
+
+fun Context.openSearch(query: String? = null) {
+    val intent = Intent(Intent.ACTION_WEB_SEARCH)
+    intent.putExtra(SearchManager.QUERY, query ?: "")
+    startActivity(intent)
+}
